@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>Fynn Tabs — Trình Quản Lý</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../shared/ui.css">
+  <style>
+    main {
+      max-width: 960px;
+      margin: 40px auto;
+      padding: 0 24px 60px;
+    }
+
+    /* Top Navigation Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-brand h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+    }
+    .header-brand p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    /* Stats Overview Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+    .stat-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: var(--transition);
+    }
+    .stat-card:hover {
+      background: var(--bg-card);
+      border-color: var(--border-light);
+    }
+    .stat-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-sm);
+      background: var(--accent-glow);
+      color: var(--accent-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .stat-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .stat-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.2;
+    }
+    .stat-label {
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    /* Toolbar & Search */
+    .manager-toolbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+    .filter-pills {
+      display: flex;
+      gap: 6px;
+      background: var(--bg-surface);
+      padding: 3px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+    }
+    .filter-pill {
+      background: transparent;
+      border: none;
+      font-size: 12px;
+      padding: 5px 12px;
+      border-radius: 4px;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .filter-pill:hover {
+      color: var(--text-main);
+    }
+    .filter-pill.active {
+      background: var(--bg-card);
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    /* Section Styles */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 32px 0 16px;
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-create-bar {
+      display: flex;
+      gap: 10px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      align-items: center;
+    }
+    .section-create-bar input {
+      flex: 1;
+    }
+
+    /* Accordion Card */
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: 12px;
+      overflow: hidden;
+      transition: var(--transition);
+    }
+    .card:hover {
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      gap: 12px;
+      cursor: pointer;
+      user-select: none;
+      background: var(--bg-surface);
+      transition: background 0.15s ease;
+    }
+    .card-header:hover {
+      background: var(--bg-card);
+    }
+    .card-chevron {
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .card.open .card-chevron {
+      transform: rotate(180deg);
+    }
+    .card-title-area {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card-title {
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-title-input {
+      font-size: 14px;
+      font-weight: 500;
+      padding: 3px 8px;
+      max-width: 280px;
+    }
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card-body {
+      display: none;
+      padding: 14px 16px 16px;
+      border-top: 1px solid var(--border-subtle);
+      background: rgba(0, 0, 0, 0.15);
+      flex-direction: column;
+      gap: 6px;
+    }
+    .card.open .card-body {
+      display: flex;
+    }
+
+    /* URL Items inside Card */
+    .url-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      transition: var(--transition);
+    }
+    .url-row:hover {
+      border-color: var(--border-light);
+      background: var(--bg-card-hover);
+    }
+    .url-link {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+    }
+    .url-link:hover .url-title {
+      color: var(--accent-light);
+    }
+    .url-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .url-sub {
+      font-size: 11px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .url-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      opacity: 0.7;
+    }
+    .url-row:hover .url-actions {
+      opacity: 1;
+    }
+    .add-url-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <!-- Header -->
+    <header class="header">
+      <div class="header-brand">
+        <div id="brand-logo"></div>
+        <div>
+          <h1>Fynn Tabs</h1>
+          <p>Quản lý và sao lưu Workspaces, Sessions trình duyệt</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="export">
+          <span id="export-icon"></span> Xuất JSON
+        </button>
+        <button id="import">
+          <span id="import-icon"></span> Nhập JSON
+        </button>
+        <input id="file" type="file" accept="application/json,.json" hidden>
+      </div>
+    </header>
+
+    <!-- Stats Overview -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon" id="stat-icon-ws"></div>
+        <div class="stat-info">
+          <span id="stat-ws-count" class="stat-value">0</span>
+          <span class="stat-label">Workspaces đã lưu</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" id="stat-icon-sess"></div>
+        <div class="stat-info">
+          <span id="stat-sess-count" class="stat-value">0</span>
+          <span class="stat-label">Sessions chụp màn hình</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" id="stat-icon-urls"></div>
+        <div class="stat-info">
+          <span id="stat-url-count" class="stat-value">0</span>
+          <span class="stat-label">Tổng liên kết URL lưu trữ</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toolbar: Search & Filters -->
+    <div class="manager-toolbar">
+      <div class="search-wrapper">
+        <span class="search-icon" id="search-icon"></span>
+        <input id="search" placeholder="Tìm theo tên workspace, session, tiêu đề trang hoặc URL…">
+        <button id="search-clear" class="clear-btn" title="Xóa tìm kiếm">✕</button>
+      </div>
+      <div class="filter-pills">
+        <button class="filter-pill active" data-filter="all">Tất cả</button>
+        <button class="filter-pill" data-filter="workspaces">Workspaces</button>
+        <button class="filter-pill" data-filter="sessions">Sessions</button>
+      </div>
+    </div>
+
+    <!-- Section Workspaces -->
+    <section id="section-workspaces">
+      <div class="section-header">
+        <div class="section-title">
+          <span id="ws-sec-icon"></span>
+          <span>Workspaces</span>
+          <span id="ws-badge" class="badge accent">0</span>
+        </div>
+      </div>
+
+      <div class="section-create-bar">
+        <input id="wname" placeholder="Nhập tên workspace mới…">
+        <button id="wnew" class="primary">Tạo mới</button>
+        <button id="wcur">Lưu từ các tab hiện tại</button>
+      </div>
+
+      <div id="workspaces"></div>
+    </section>
+
+    <!-- Section Sessions -->
+    <section id="section-sessions">
+      <div class="section-header">
+        <div class="section-title">
+          <span id="sess-sec-icon"></span>
+          <span>Sessions</span>
+          <span id="sess-badge" class="badge">0</span>
+        </div>
+      </div>
+
+      <div id="sessions"></div>
+    </section>
+  </main>
+
+  <script type="module" src="manager.js"></script>
+</body>
+</html>

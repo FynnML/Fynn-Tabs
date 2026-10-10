@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "Fynn Tabs",
+  "version": "0.1.0",
+  "description": "Quản lý tab, session và workspace — hoạt động độc lập.",
+  "permissions": ["tabs", "storage"],
+  "background": { "service_worker": "src/background/service-worker.js", "type": "module" },
+  "action": { "default_popup": "src/popup/popup.html", "default_title": "Fynn Tabs" }
+}

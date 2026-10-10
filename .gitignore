@@ -1,0 +1,25 @@
+# Dữ liệu cá nhân: file sao lưu chứa danh sách URL của bạn
+fynn-tabs-*.json
+
+# Gói và khoá đóng gói extension
+*.zip
+*.crx
+*.pem
+
+# Node (nếu sau này thêm công cụ build/test)
+node_modules/
+npm-debug.log*
+
+# Biến môi trường / bí mật
+.env
+.env.*
+
+# Hệ điều hành
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Trình soạn thảo
+.vscode/
+.idea/
+*.swp
