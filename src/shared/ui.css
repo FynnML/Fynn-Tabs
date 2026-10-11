@@ -1,44 +1,75 @@
 :root {
-  /* Design Tokens - Modern Dark Palette */
-  --bg-base: #0c0e14;
-  --bg-surface: #131722;
-  --bg-card: #181d2a;
-  --bg-card-hover: #1f2537;
-  --bg-active: rgba(99, 102, 241, 0.15);
-  
-  --border-subtle: #242a3e;
-  --border-focus: #6366f1;
-  --border-light: rgba(255, 255, 255, 0.08);
+  /* ==========================================================================
+     Design Tokens - Fynn Design Ecosystem (Monochromatic Dark / Minimalist)
+     ========================================================================== */
 
-  --text-main: #f1f5f9;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
+  /* Surface & Background Colors */
+  --bg-base: #080808;
+  --bg-surface: #141414;
+  --bg-card: #181818;
+  --bg-card-hover: #222222;
+  --bg-active: rgba(255, 255, 255, 0.08);
 
-  --accent: #6366f1;
-  --accent-hover: #4f46e5;
-  --accent-light: #818cf8;
-  --accent-glow: rgba(99, 102, 241, 0.25);
+  --surface-interactive: #222222;
+  --surface-interactive-hover: #2a2a2a;
+  --surface-glass: rgba(20, 20, 20, 0.85);
 
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-light: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --border-focus: rgba(255, 255, 255, 0.35);
+
+  /* Typography Colors */
+  --text-main: #f0f0f0;
+  --text-muted: rgba(240, 240, 240, 0.65);
+  --text-dim: rgba(240, 240, 240, 0.4);
+
+  /* Monochromatic Accent (Aligned with Fynn-NewTab minimalism) */
+  --accent: #f0f0f0;
+  --accent-hover: #ffffff;
+  --accent-light: rgba(240, 240, 240, 0.9);
+  --accent-glow: rgba(255, 255, 255, 0.08);
+
+  /* Semantic Feedback Colors */
   --danger: #ef4444;
   --danger-hover: #dc2626;
-  --danger-subtle: rgba(239, 68, 68, 0.15);
+  --danger-subtle: rgba(239, 68, 68, 0.12);
 
   --success: #10b981;
-  --success-subtle: rgba(16, 185, 129, 0.15);
+  --success-hover: #059669;
+  --success-subtle: rgba(16, 185, 129, 0.12);
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  /* Spacing Scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 18px;
+  --space-5: 28px;
+  --space-6: 40px;
+
+  /* Corner Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
   --radius-pill: 9999px;
 
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.35);
+  /* Shadows & Highlights */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.6);
   --shadow-glow: 0 0 16px var(--accent-glow);
 
-  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Typography & Transitions */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: all 0.12s ease;
 }
 
+/* ==========================================================================
+   Base Styles & Reset
+   ========================================================================== */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -49,29 +80,32 @@ body {
   background: var(--bg-base);
   color: var(--text-main);
   font-family: var(--font-family);
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-/* Scrollbar tùy chỉnh */
+/* Scrollbar tối giản và tinh tế */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-subtle);
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-dim);
+  background: rgba(255, 255, 255, 0.22);
 }
 
-/* Buttons */
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
 button {
   display: inline-flex;
   align-items: center;
@@ -81,7 +115,7 @@ button {
   font-size: 13px;
   font-weight: 500;
   color: var(--text-main);
-  background: var(--bg-card);
+  background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   padding: 6px 12px;
@@ -95,40 +129,57 @@ button {
 button:hover {
   background: var(--bg-card-hover);
   border-color: var(--border-light);
-  transform: translateY(-1px);
 }
 
 button:active {
+  background: var(--bg-surface);
   transform: translateY(0);
 }
 
 button:focus-visible {
   outline: none;
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 2px var(--accent-glow);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12);
 }
 
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Nút hành động chính - Tương phản cao đơn sắc (High-contrast Monochromatic) */
 button.primary {
-  background: var(--accent);
-  color: #ffffff;
-  border-color: var(--accent);
-  box-shadow: 0 2px 8px var(--accent-glow);
-}
-button.primary:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
+  background: var(--text-main);
+  color: #080808;
+  border-color: var(--text-main);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
 }
 
+button.primary:hover {
+  background: #ffffff;
+  border-color: #ffffff;
+}
+
+button.primary:active {
+  background: #e0e0e0;
+  border-color: #e0e0e0;
+}
+
+/* Nút hành động nguy hiểm / hủy bỏ */
 button.danger {
   background: transparent;
   color: var(--danger);
   border-color: transparent;
 }
+
 button.danger:hover {
   background: var(--danger-subtle);
-  border-color: var(--danger-subtle);
+  border-color: transparent;
 }
 
+/* Nút chỉ chứa icon */
 button.icon-btn {
   padding: 6px;
   border-radius: var(--radius-sm);
@@ -136,18 +187,28 @@ button.icon-btn {
   border: 1px solid transparent;
   color: var(--text-muted);
 }
+
 button.icon-btn:hover {
   color: var(--text-main);
   background: var(--bg-card-hover);
   border-color: var(--border-subtle);
 }
+
+button.icon-btn:focus-visible {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12);
+}
+
 button.icon-btn.danger:hover {
   color: var(--danger);
   background: var(--danger-subtle);
   border-color: transparent;
 }
 
-/* Form Inputs */
+/* ==========================================================================
+   Form Inputs
+   ========================================================================== */
 input {
   font-family: inherit;
   font-size: 13px;
@@ -168,14 +229,21 @@ input:focus {
   outline: none;
   background: var(--bg-card);
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--accent-glow);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
 }
 
-/* Layout Utilities */
+input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Layout Utilities & Badges
+   ========================================================================== */
 .row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .row.stretch {
   align-items: stretch;
@@ -190,17 +258,21 @@ input:focus {
   justify-content: center;
   padding: 2px 7px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
 }
 .badge.accent {
-  background: var(--accent-glow);
-  color: var(--accent-light);
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-main);
+  border-color: var(--border-light);
 }
 
-/* Search Box Container */
+/* ==========================================================================
+   Search Box Container
+   ========================================================================== */
 .search-wrapper {
   position: relative;
   display: flex;
@@ -218,25 +290,40 @@ input:focus {
 .search-wrapper input {
   padding-left: 32px;
   padding-right: 32px;
+  height: 36px;
 }
 .search-wrapper .clear-btn {
   position: absolute;
   right: 6px;
-  padding: 3px;
+  padding: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
   background: transparent;
   border: none;
   color: var(--text-dim);
   cursor: pointer;
   display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  transition: var(--transition);
 }
 .search-wrapper .clear-btn.visible {
   display: flex;
 }
 .search-wrapper .clear-btn:hover {
   color: var(--text-main);
+  background: rgba(255, 255, 255, 0.08);
+}
+.search-wrapper .clear-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15);
 }
 
-/* Favicon */
+/* ==========================================================================
+   Favicon Box
+   ========================================================================== */
 .favicon-box {
   width: 18px;
   height: 18px;
@@ -253,7 +340,9 @@ input:focus {
   object-fit: contain;
 }
 
-/* Item List / Tab Rows */
+/* ==========================================================================
+   Item List / Tab Rows
+   ========================================================================== */
 .item-list {
   display: flex;
   flex-direction: column;
@@ -263,7 +352,7 @@ input:focus {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 7px 10px;
+  padding: 8px 10px;
   border-radius: var(--radius-sm);
   background: transparent;
   border: 1px solid transparent;
@@ -272,22 +361,22 @@ input:focus {
   position: relative;
 }
 .item:hover {
-  background: var(--bg-card);
+  background: var(--bg-surface);
   border-color: var(--border-subtle);
 }
 .item.active {
-  background: var(--bg-active);
-  border-color: rgba(99, 102, 241, 0.3);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--border-light);
 }
 .item.active::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 6px;
-  bottom: 6px;
-  width: 3px;
-  background: var(--accent);
-  border-radius: 0 3px 3px 0;
+  top: 7px;
+  bottom: 7px;
+  width: 2.5px;
+  background: var(--text-main);
+  border-radius: 0 2px 2px 0;
 }
 .item-info {
   flex: 1;
@@ -304,27 +393,31 @@ input:focus {
   white-space: nowrap;
 }
 .item-subtitle {
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--text-dim);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  margin-top: 1px;
 }
 .item-actions {
   display: flex;
   align-items: center;
   gap: 4px;
-  opacity: 0.6;
+  opacity: 0;
   transition: opacity 0.15s ease;
 }
-.item:hover .item-actions {
+.item:hover .item-actions,
+.item:focus-within .item-actions {
   opacity: 1;
 }
 
-/* Toast Notifications */
+/* ==========================================================================
+   Toast Notifications
+   ========================================================================== */
 .toast-container {
   position: fixed;
-  bottom: 14px;
+  bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;
@@ -335,11 +428,11 @@ input:focus {
   max-width: 90%;
 }
 .toast {
-  background: #1e2333;
+  background: var(--bg-surface);
   color: var(--text-main);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
-  padding: 8px 14px;
+  padding: 8px 16px;
   font-size: 12.5px;
   font-weight: 500;
   box-shadow: var(--shadow-md);
@@ -348,9 +441,10 @@ input:focus {
   gap: 8px;
   animation: toast-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   pointer-events: auto;
+  backdrop-filter: blur(12px);
 }
 .toast.success {
-  border-color: rgba(16, 185, 129, 0.4);
+  border-color: rgba(16, 185, 129, 0.35);
 }
 .toast.success::before {
   content: '✓';
@@ -358,35 +452,100 @@ input:focus {
   font-weight: 700;
 }
 .toast.error {
-  border-color: rgba(239, 68, 68, 0.4);
+  border-color: rgba(239, 68, 68, 0.35);
 }
 .toast.error::before {
   content: '✕';
   color: var(--danger);
   font-weight: 700;
 }
+.toast.info {
+  border-color: var(--border-light);
+}
 @keyframes toast-in {
-  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* Empty State */
+/* ==========================================================================
+   Empty State
+   ========================================================================== */
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 32px 16px;
+  padding: 36px 16px;
   text-align: center;
   color: var(--text-dim);
-  gap: 8px;
+  gap: 10px;
 }
 .empty-state svg {
   color: var(--text-dim);
-  opacity: 0.6;
-  margin-bottom: 4px;
+  opacity: 0.5;
+  width: 24px;
+  height: 24px;
 }
 .empty-state p {
   font-size: 13px;
   color: var(--text-muted);
 }
+
+/* ==========================================================================
+   Accessibility & Reduced Motion
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   Confirmation Dialog / Modal Safeguard
+   ========================================================================== */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 16px;
+  animation: confirm-fade-in 0.15s ease-out;
+}
+.confirm-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  max-width: 340px;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+}
+.confirm-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+.confirm-message {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+@keyframes confirm-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+

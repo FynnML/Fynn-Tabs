@@ -14,8 +14,10 @@ export function normalizeUrl(input) {
 const touch = (w) => ({ ...w, updatedAt: Date.now() });
 const patch = (id, fn) => update('workspaces', (list) => list.map((w) => (w.id === id ? touch(fn(w)) : w)));
 
+export const TAB_WARNING_THRESHOLD = 20;
+
 export async function listWorkspaces() {
-  return (await load()).workspaces;
+  return (await load('workspaces')).workspaces ?? [];
 }
 
 export async function createWorkspace(name, urls = []) {
@@ -66,9 +68,16 @@ export const moveUrl = (id, index, delta) =>
 export const deleteWorkspace = (id) =>
   update('workspaces', (list) => list.filter((w) => w.id !== id));
 
-export async function openWorkspace(id) {
+export async function openWorkspace(id, options = {}) {
   const w = (await listWorkspaces()).find((x) => x.id === id);
   if (!w) throw new Error('Không tìm thấy workspace.');
   if (!w.urls.length) throw new Error('Workspace này chưa có URL nào.');
+
+  if (w.urls.length > TAB_WARNING_THRESHOLD && typeof options.confirm === 'function') {
+    const ok = await options.confirm(w.urls.length, w.name);
+    if (!ok) return false;
+  }
+
   await chrome.windows.create({ url: w.urls.map((x) => x.url) });
+  return true;
 }

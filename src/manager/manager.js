@@ -1,23 +1,14 @@
 import { listSessions, restoreSession, deleteSession, renameSession, removeSessionTab } from '../shared/sessions.js';
 import * as ws from '../shared/workspaces.js';
-import { exportData, importData } from '../shared/backup.js';
+import { exportData, importData, MAX_IMPORT_SIZE } from '../shared/backup.js';
 import { ICONS, createFaviconElement, getDomain } from '../shared/icons.js';
 import { showToast } from '../shared/toast.js';
-
-const $ = (id) => document.getElementById(id);
+import { $, guard, createEmptyState, confirmTabOpen } from '../shared/ui.js';
 
 let query = '';
 let activeFilter = 'all'; // 'all' | 'workspaces' | 'sessions'
 const openIds = new Set();
 const match = (text) => (text || '').toLowerCase().includes(query);
-
-const guard = (fn) => async (...args) => {
-  try {
-    await fn(...args);
-  } catch (err) {
-    showToast(err.message, 'error');
-  }
-};
 
 // Cài đặt icon tĩnh
 function setupIcons() {
@@ -45,40 +36,43 @@ function updateStats(workspaces, sessions) {
   $('sess-badge').textContent = sessions.length;
 }
 
-// Tạo empty state
-function createEmptyState(message, iconSvg) {
-  const div = document.createElement('div');
-  div.className = 'empty-state';
-  div.innerHTML = `${iconSvg}<p>${message}</p>`;
-  return div;
-}
-
 // Tạo nút xác nhận xóa mượt mà (inline confirm, không dùng dialog confirm chặn màn hình)
 function createConfirmDeleteButton(onConfirm) {
   const btn = document.createElement('button');
   btn.className = 'icon-btn danger';
   btn.title = 'Xoá';
+  btn.setAttribute('aria-label', 'Xoá');
   btn.innerHTML = ICONS.trash;
 
   let confirming = false;
   let timer = null;
 
+  const resetState = () => {
+    confirming = false;
+    btn.innerHTML = ICONS.trash;
+    btn.style.color = '';
+    btn.title = 'Xoá';
+    btn.setAttribute('aria-label', 'Xoá');
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+  };
+
   btn.onclick = (e) => {
     e.stopPropagation();
     if (!confirming) {
+      if (timer) clearTimeout(timer);
       confirming = true;
       btn.innerHTML = ICONS.check;
       btn.style.color = 'var(--danger)';
       btn.title = 'Bấm lần nữa để xác nhận xoá';
+      btn.setAttribute('aria-label', 'Bấm lần nữa để xác nhận xoá');
       showToast('Bấm lần nữa để xác nhận xoá', 'info', 1800);
 
-      timer = setTimeout(() => {
-        confirming = false;
-        btn.innerHTML = ICONS.trash;
-        btn.title = 'Xoá';
-      }, 3000);
+      timer = setTimeout(resetState, 3000);
     } else {
-      clearTimeout(timer);
+      resetState();
       guard(onConfirm)();
     }
   };
@@ -95,13 +89,19 @@ function createCard({ id, iconSvg, title, subtitle, countBadge, actions, bodyEle
   // Header
   const header = document.createElement('div');
   header.className = 'card-header';
+  header.setAttribute('role', 'button');
+  header.setAttribute('tabindex', '0');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  header.setAttribute('aria-label', `${title}, ${countBadge}`);
 
   const chevron = document.createElement('span');
   chevron.className = 'card-chevron';
+  chevron.setAttribute('aria-hidden', 'true');
   chevron.innerHTML = ICONS.chevronDown;
 
   const typeIcon = document.createElement('span');
   typeIcon.className = 'favicon-box';
+  typeIcon.setAttribute('aria-hidden', 'true');
   typeIcon.innerHTML = iconSvg;
 
   const titleArea = document.createElement('div');
@@ -129,6 +129,7 @@ function createCard({ id, iconSvg, title, subtitle, countBadge, actions, bodyEle
   const editBtn = document.createElement('button');
   editBtn.className = 'icon-btn';
   editBtn.title = 'Đổi tên';
+  editBtn.setAttribute('aria-label', `Đổi tên ${title}`);
   editBtn.innerHTML = ICONS.edit;
 
   editBtn.onclick = (e) => {
@@ -137,21 +138,42 @@ function createCard({ id, iconSvg, title, subtitle, countBadge, actions, bodyEle
     const input = document.createElement('input');
     input.className = 'card-title-input';
     input.value = title;
+    input.setAttribute('aria-label', `Tên mới cho ${title}`);
+
+    let isCancelled = false;
+    let isCommitted = false;
+
+    const restoreDisplay = () => {
+      titleArea.replaceChildren(titleText, badge, sub);
+    };
 
     const saveRename = async () => {
+      if (isCancelled || isCommitted) return;
+      isCommitted = true;
       const nextName = input.value.trim();
       if (nextName && nextName !== title && onRename) {
         await onRename(nextName);
         showToast('Đã đổi tên thành công', 'success');
       } else {
-        titleArea.replaceChildren(titleText, badge, sub);
+        restoreDisplay();
       }
+    };
+
+    const cancelRename = () => {
+      if (isCancelled || isCommitted) return;
+      isCancelled = true;
+      restoreDisplay();
     };
 
     input.onblur = guard(saveRename);
     input.onkeydown = (ev) => {
-      if (ev.key === 'Enter') input.blur();
-      if (ev.key === 'Escape') titleArea.replaceChildren(titleText, badge, sub);
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        guard(saveRename)();
+      } else if (ev.key === 'Escape') {
+        ev.preventDefault();
+        cancelRename();
+      }
     };
 
     titleArea.replaceChildren(input);
@@ -164,14 +186,23 @@ function createCard({ id, iconSvg, title, subtitle, countBadge, actions, bodyEle
   header.append(chevron, typeIcon, titleArea, actionsContainer);
 
   // Toggle card
-  header.onclick = (e) => {
-    // Không toggle nếu đang click vào nút bấm hoặc input đổi tên
+  const toggleCard = (e) => {
     if (e.target.closest('button') || e.target.closest('input')) return;
     const isNowOpen = !cardEl.classList.contains('open');
     cardEl.classList.toggle('open', isNowOpen);
+    header.setAttribute('aria-expanded', isNowOpen ? 'true' : 'false');
     if (!query) {
       if (isNowOpen) openIds.add(id);
       else openIds.delete(id);
+    }
+  };
+
+  header.onclick = toggleCard;
+  header.onkeydown = (e) => {
+    if (e.target.closest('button') || e.target.closest('input')) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleCard(e);
     }
   };
 
@@ -209,6 +240,9 @@ async function renderWorkspaces() {
       const link = document.createElement('div');
       link.className = 'url-link';
       link.title = `Mở: ${u.url}`;
+      link.setAttribute('role', 'button');
+      link.setAttribute('tabindex', '0');
+      link.setAttribute('aria-label', `Mở liên kết: ${u.title || u.url}`);
 
       const t = document.createElement('div');
       t.className = 'url-title';
@@ -219,7 +253,14 @@ async function renderWorkspaces() {
       s.textContent = getDomain(u.url) || u.url;
 
       link.append(t, s);
-      link.onclick = () => chrome.tabs.create({ url: u.url });
+      const openTab = () => chrome.tabs.create({ url: u.url });
+      link.onclick = openTab;
+      link.onkeydown = (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openTab();
+        }
+      };
 
       // Nút điều khiển URL
       const acts = document.createElement('div');
@@ -228,6 +269,7 @@ async function renderWorkspaces() {
       const upBtn = document.createElement('button');
       upBtn.className = 'icon-btn';
       upBtn.title = 'Di chuyển lên';
+      upBtn.setAttribute('aria-label', `Di chuyển lên: ${u.title || u.url}`);
       upBtn.innerHTML = ICONS.arrowUp;
       upBtn.onclick = guard(async () => {
         await ws.moveUrl(w.id, i, -1);
@@ -237,6 +279,7 @@ async function renderWorkspaces() {
       const downBtn = document.createElement('button');
       downBtn.className = 'icon-btn';
       downBtn.title = 'Di chuyển xuống';
+      downBtn.setAttribute('aria-label', `Di chuyển xuống: ${u.title || u.url}`);
       downBtn.innerHTML = ICONS.arrowDown;
       downBtn.onclick = guard(async () => {
         await ws.moveUrl(w.id, i, 1);
@@ -246,6 +289,7 @@ async function renderWorkspaces() {
       const delBtn = document.createElement('button');
       delBtn.className = 'icon-btn danger';
       delBtn.title = 'Xoá URL';
+      delBtn.setAttribute('aria-label', `Xoá ${u.title || u.url} khỏi workspace`);
       delBtn.innerHTML = ICONS.close;
       delBtn.onclick = guard(async () => {
         await ws.removeUrl(w.id, u.url);
@@ -263,6 +307,7 @@ async function renderWorkspaces() {
 
     const input = document.createElement('input');
     input.placeholder = 'Thêm URL vào workspace này (vd: github.com)…';
+    input.setAttribute('aria-label', `Thêm URL vào workspace ${w.name}`);
 
     const addBtn = document.createElement('button');
     addBtn.className = 'primary';
@@ -287,10 +332,11 @@ async function renderWorkspaces() {
     const openAllBtn = document.createElement('button');
     openAllBtn.className = 'primary';
     openAllBtn.innerHTML = `${ICONS.externalLink} Mở tất cả`;
+    openAllBtn.setAttribute('aria-label', `Mở tất cả URL trong workspace ${w.name}`);
     openAllBtn.onclick = guard(async (e) => {
       e.stopPropagation();
-      await ws.openWorkspace(w.id);
-      showToast(`Đã mở workspace "${w.name}"`, 'success');
+      const opened = await ws.openWorkspace(w.id, { confirm: confirmTabOpen });
+      if (opened) showToast(`Đã mở workspace "${w.name}"`, 'success');
     });
 
     // Nút xóa workspace
@@ -345,6 +391,9 @@ async function renderSessions() {
       const link = document.createElement('div');
       link.className = 'url-link';
       link.title = `Mở tab: ${t.url}`;
+      link.setAttribute('role', 'button');
+      link.setAttribute('tabindex', '0');
+      link.setAttribute('aria-label', `Mở tab: ${t.title || t.url}`);
 
       const titleEl = document.createElement('div');
       titleEl.className = 'url-title';
@@ -355,11 +404,19 @@ async function renderSessions() {
       sub.textContent = getDomain(t.url) || t.url;
 
       link.append(titleEl, sub);
-      link.onclick = () => chrome.tabs.create({ url: t.url });
+      const openTab = () => chrome.tabs.create({ url: t.url });
+      link.onclick = openTab;
+      link.onkeydown = (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openTab();
+        }
+      };
 
       const delBtn = document.createElement('button');
       delBtn.className = 'icon-btn danger';
       delBtn.title = 'Xoá tab khỏi session';
+      delBtn.setAttribute('aria-label', `Xoá tab ${t.title || t.url} khỏi session`);
       delBtn.innerHTML = ICONS.close;
       delBtn.onclick = guard(async () => {
         await removeSessionTab(s.id, i);
@@ -382,15 +439,17 @@ async function renderSessions() {
     const restoreBtn = document.createElement('button');
     restoreBtn.className = 'primary';
     restoreBtn.innerHTML = `${ICONS.externalLink} Khôi phục`;
+    restoreBtn.setAttribute('aria-label', `Khôi phục session ${s.name}`);
     restoreBtn.onclick = guard(async (e) => {
       e.stopPropagation();
-      await restoreSession(s.id);
-      showToast(`Đã khôi phục "${s.name}"`, 'success');
+      const restored = await restoreSession(s.id, { confirm: confirmTabOpen });
+      if (restored) showToast(`Đã khôi phục "${s.name}"`, 'success');
     });
 
     // Nút chuyển thành Workspace
     const toWsBtn = document.createElement('button');
     toWsBtn.title = 'Chuyển thành Workspace dùng lâu dài';
+    toWsBtn.setAttribute('aria-label', `Chuyển session ${s.name} thành Workspace`);
     toWsBtn.innerHTML = `${ICONS.folder} → Workspace`;
     toWsBtn.onclick = guard(async (e) => {
       e.stopPropagation();
@@ -438,8 +497,12 @@ function setupFilters() {
   const pills = document.querySelectorAll('.filter-pill');
   pills.forEach((pill) => {
     pill.addEventListener('click', () => {
-      pills.forEach((p) => p.classList.remove('active'));
+      pills.forEach((p) => {
+        p.classList.remove('active');
+        p.setAttribute('aria-pressed', 'false');
+      });
       pill.classList.add('active');
+      pill.setAttribute('aria-pressed', 'true');
       activeFilter = pill.dataset.filter;
 
       const wsSec = $('section-workspaces');
@@ -515,6 +578,9 @@ function setupEvents() {
     const file = $('file').files[0];
     if (!file) return;
     try {
+      if (file.size > MAX_IMPORT_SIZE) {
+        throw new Error('Tệp sao lưu vượt quá kích thước tối đa cho phép (5 MiB).');
+      }
       const r = await importData(await file.text());
       showToast(`Đã nạp ${r.workspaces} workspace & ${r.sessions} session mới!`, 'success');
       await renderAll();

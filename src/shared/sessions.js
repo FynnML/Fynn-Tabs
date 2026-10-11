@@ -3,8 +3,10 @@ import { load, update } from './storage.js';
 
 const isSavable = (url) => /^https?:/i.test(url || '');
 
+export const TAB_WARNING_THRESHOLD = 20;
+
 export async function listSessions() {
-  return (await load()).sessions;
+  return (await load('sessions')).sessions ?? [];
 }
 
 export async function saveCurrent(name) {
@@ -22,11 +24,41 @@ export async function saveCurrent(name) {
   return session;
 }
 
-export async function restoreSession(id) {
+export async function restoreSession(id, options = {}) {
   const session = (await listSessions()).find((s) => s.id === id);
   if (!session) throw new Error('Không tìm thấy session.');
   if (!session.tabs.length) throw new Error('Session này không còn tab nào.');
-  await chrome.windows.create({ url: session.tabs.map((t) => t.url) });
+
+  if (session.tabs.length > TAB_WARNING_THRESHOLD && typeof options.confirm === 'function') {
+    const ok = await options.confirm(session.tabs.length, session.name);
+    if (!ok) return false;
+  }
+
+  const win = await chrome.windows.create({ url: session.tabs.map((t) => t.url) });
+
+  if (win?.id) {
+    try {
+      const createdTabs = (win.tabs && win.tabs.length === session.tabs.length)
+        ? win.tabs
+        : await chrome.tabs.query({ windowId: win.id });
+
+      createdTabs.sort((a, b) => a.index - b.index);
+
+      for (let i = 0; i < session.tabs.length; i++) {
+        if (session.tabs[i]?.pinned && createdTabs[i]?.id) {
+          try {
+            await chrome.tabs.update(createdTabs[i].id, { pinned: true });
+          } catch {
+            // Không làm gián đoạn việc phục hồi nếu ghim một tab cụ thể gặp lỗi
+          }
+        }
+      }
+    } catch {
+      // Bỏ qua lỗi query, cửa sổ và các tab đã được mở
+    }
+  }
+
+  return true;
 }
 
 export const renameSession = (id, name) =>

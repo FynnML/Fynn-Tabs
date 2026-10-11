@@ -33,26 +33,29 @@ Sau khi sửa code, bấm nút **Reload** của extension trong trang extensions
 ## Quyền riêng tư và quyền truy cập
 
 | Quyền | Dùng để làm gì |
-|-------|----------------|
+|---|---|
 | `tabs` | Đọc tiêu đề và URL của các tab để hiển thị, tìm kiếm, lưu session/workspace; chuyển, đóng và mở tab. |
 | `storage` | Lưu session và workspace vào `chrome.storage.local` trên máy bạn. |
+| `favicon` | Hiển thị biểu tượng trang web (favicon) thông qua cơ chế nội bộ của Chromium (`_favicon`) hoàn toàn cục bộ, yêu cầu Chromium 104+. |
 
-- Extension **không gửi dữ liệu ra ngoài**, không có máy chủ, không thu thập thống kê.
+- Extension **không truyền dữ liệu ra ngoài**, không có máy chủ backend, không thu thập thống kê hay nhật ký sử dụng.
+- Fynn Tabs không truyền dữ liệu session/workspace hay URL tab đến dịch vụ favicon của bên thứ ba (như Google Favicon API); biểu tượng trang web được truy vấn cục bộ qua endpoint nội bộ của trình duyệt Chromium.
 - Chỉ các URL `http://` và `https://` được lưu. Trang nội bộ của trình duyệt (như `chrome://`) bị bỏ qua.
 - File JSON xuất ra chứa danh sách URL bạn đã lưu, hãy cất giữ cẩn thận và đừng commit lên repo công khai.
 
 ## Cấu trúc dự án
 
 ```
-├── manifest.json              # Manifest V3
+├── manifest.json              # Manifest V3 (yêu cầu Chromium 104+)
 └── src/
     ├── background/
     │   └── service-worker.js  # Khởi tạo dữ liệu khi cài đặt
     ├── shared/
-    │   ├── storage.js         # Lưu trữ + schema có version và migration
-    │   ├── sessions.js        # Logic session
+    │   ├── storage.js         # Lưu trữ, hàng đợi ghi tuần tự + schema có version
+    │   ├── sessions.js        # Logic session + khôi phục tab ghim (pinned)
     │   ├── workspaces.js      # Logic workspace
-    │   ├── backup.js          # Xuất/nhập JSON
+    │   ├── backup.js          # Xuất/nhập JSON (giới hạn 5 MiB)
+    │   ├── ui.js              # Tiện ích giao diện & hộp thoại xác nhận dùng chung
     │   └── ui.css             # Giao diện dùng chung
     ├── popup/                 # Cửa sổ popup
     └── manager/               # Trang quản lý đầy đủ
@@ -62,17 +65,15 @@ Dự án không cần bước build: chỉ gồm HTML, CSS và JavaScript thuầ
 
 ## Giới hạn đã biết
 
-- Chưa có icon cho extension.
-- Trạng thái ghim tab (`pinned`) được lưu nhưng chưa áp dụng khi khôi phục.
+- Chưa có icon thanh công cụ (toolbar raster icons) cho extension.
 - Dữ liệu nằm trong `chrome.storage.local` (giới hạn khoảng 10 MB). Người dùng thông thường khó chạm trần, nhưng lưu rất nhiều session thì có thể.
-- Chưa có bộ test tự động trong repo.
+- Chưa có bộ test tự động tích hợp CI trong repo.
 - Chưa có tích hợp với Fynn New Tab (Quick Panel).
 
 ## Hướng phát triển
 
 - Tích hợp Quick Panel với Fynn New Tab thông qua giao thức nhắn tin giữa hai extension.
-- Áp dụng trạng thái ghim tab khi khôi phục.
-- Icon, ảnh chụp màn hình và chính sách quyền riêng tư để đưa lên Chrome Web Store.
+- Icon raster đa độ phân giải, ảnh chụp màn hình và chính sách quyền riêng tư để đưa lên Chrome Web Store.
 
 ## Giấy phép
 

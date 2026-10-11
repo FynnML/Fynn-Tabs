@@ -1,0 +1,150 @@
+/* ==========================================================================
+   Popup Layout Styles (Fynn Tabs)
+   ========================================================================== */
+
+body {
+  width: 400px;
+  max-height: 580px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-3) var(--space-3) var(--space-4);
+  background: var(--bg-base);
+  user-select: none;
+}
+
+/* Header */
+.popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.brand-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-title .version {
+  font-size: 10.5px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  font-weight: 500;
+}
+
+/* Segmented Navigation */
+.nav-tabs {
+  display: flex;
+  background: var(--bg-surface);
+  padding: 3px;
+  border-radius: var(--radius-md);
+  gap: 3px;
+  margin-bottom: var(--space-3);
+  border: 1px solid var(--border-subtle);
+}
+
+.nav-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: calc(var(--radius-md) - 3px);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.nav-tab:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.nav-tab.active {
+  background: var(--bg-card);
+  color: var(--text-main);
+  box-shadow: var(--shadow-sm);
+  border-color: var(--border-light);
+  font-weight: 600;
+}
+
+.nav-tab .badge {
+  font-size: 10px;
+  padding: 1px 5px;
+  transition: var(--transition);
+}
+
+.nav-tab.active .badge {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-main);
+  border-color: var(--border-light);
+}
+
+/* Views Container */
+.tab-view {
+  display: none;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.tab-view.active {
+  display: flex;
+}
+
+/* Scrollable List */
+.scroll-list {
+  max-height: 290px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+}
+
+/* Quick Action Bars */
+.action-bar {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.action-bar input {
+  flex: 1;
+}
+
+.action-bar-footer {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: 4px;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-2);
+}
+
+.action-bar-footer button {
+  flex: 1;
+}
+
+.pinned-tag {
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  margin-right: 4px;
+}

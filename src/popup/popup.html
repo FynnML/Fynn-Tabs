@@ -4,153 +4,37 @@
   <meta charset="utf-8">
   <title>Fynn Tabs</title>
   <link rel="stylesheet" href="../shared/ui.css">
-  <style>
-    body {
-      width: 400px;
-      max-height: 560px;
-      overflow-y: auto;
-      padding: 14px;
-      background: var(--bg-base);
-      user-select: none;
-    }
-
-    /* Popup Header */
-    .popup-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--border-subtle);
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .brand-title {
-      font-size: 14.5px;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-      color: var(--text-main);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .brand-title .version {
-      font-size: 10.5px;
-      color: var(--accent-light);
-      background: var(--accent-glow);
-      padding: 1px 6px;
-      border-radius: var(--radius-pill);
-      font-weight: 600;
-    }
-
-    /* Nav Tabs */
-    .nav-tabs {
-      display: flex;
-      background: var(--bg-surface);
-      padding: 3px;
-      border-radius: var(--radius-md);
-      gap: 4px;
-      margin-bottom: 12px;
-      border: 1px solid var(--border-subtle);
-    }
-    .nav-tab {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 6px 8px;
-      border-radius: var(--radius-sm);
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-muted);
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      transition: var(--transition);
-    }
-    .nav-tab:hover {
-      color: var(--text-main);
-      background: rgba(255, 255, 255, 0.04);
-    }
-    .nav-tab.active {
-      background: var(--bg-card);
-      color: var(--text-main);
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--border-light);
-    }
-    .nav-tab .badge {
-      font-size: 10px;
-      padding: 1px 5px;
-    }
-
-    /* Views Container */
-    .tab-view {
-      display: none;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .tab-view.active {
-      display: flex;
-    }
-
-    /* Scrollable lists */
-    .scroll-list {
-      max-height: 290px;
-      overflow-y: auto;
-      padding-right: 2px;
-    }
-
-    /* Quick action bar */
-    .action-bar {
-      display: flex;
-      gap: 8px;
-      margin-top: 4px;
-    }
-    .action-bar input {
-      flex: 1;
-    }
-
-    .pinned-tag {
-      color: var(--accent-light);
-      display: inline-flex;
-      align-items: center;
-      margin-right: 4px;
-    }
-  </style>
+  <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <!-- Header -->
   <header class="popup-header">
     <div class="brand">
-      <div id="brand-logo"></div>
+      <div id="brand-logo" aria-hidden="true"></div>
       <div class="brand-title">
         Fynn Tabs <span class="version">v0.1</span>
       </div>
     </div>
     <div class="row">
-      <button id="open-manager" class="icon-btn" title="Mở trang Quản lý đầy đủ">
+      <button id="open-manager" class="icon-btn" title="Mở trang Quản lý đầy đủ" aria-label="Mở trang Quản lý đầy đủ">
         <span id="manager-icon"></span>
       </button>
     </div>
   </header>
 
   <!-- Segmented Navigation -->
-  <nav class="nav-tabs" role="tablist">
-    <button class="nav-tab active" data-view="view-tabs" role="tab">
+  <nav class="nav-tabs" role="tablist" aria-label="Các chế độ quản lý">
+    <button class="nav-tab active" data-view="view-tabs" role="tab" id="tab-btn-tabs" aria-selected="true" aria-controls="view-tabs">
       <span id="tab-icon"></span>
       <span>Đang mở</span>
       <span id="badge-tabs" class="badge accent">0</span>
     </button>
-    <button class="nav-tab" data-view="view-workspaces" role="tab">
+    <button class="nav-tab" data-view="view-workspaces" role="tab" id="tab-btn-workspaces" aria-selected="false" aria-controls="view-workspaces">
       <span id="workspace-icon"></span>
       <span>Workspace</span>
       <span id="badge-workspaces" class="badge">0</span>
     </button>
-    <button class="nav-tab" data-view="view-sessions" role="tab">
+    <button class="nav-tab" data-view="view-sessions" role="tab" id="tab-btn-sessions" aria-selected="false" aria-controls="view-sessions">
       <span id="session-icon"></span>
       <span>Session</span>
       <span id="badge-sessions" class="badge">0</span>
@@ -158,38 +42,38 @@
   </nav>
 
   <!-- View 1: Tabs đang mở -->
-  <section id="view-tabs" class="tab-view active">
+  <section id="view-tabs" class="tab-view active" role="tabpanel" aria-labelledby="tab-btn-tabs">
     <div class="search-wrapper">
       <span class="search-icon" id="search-icon"></span>
-      <input id="q" placeholder="Tìm kiếm tab theo tiêu đề hoặc URL…" autofocus>
-      <button id="q-clear" class="clear-btn" title="Xóa tìm kiếm">✕</button>
+      <input id="q" placeholder="Tìm kiếm tab theo tiêu đề hoặc URL…" autofocus aria-label="Tìm kiếm tab">
+      <button id="q-clear" class="clear-btn" title="Xóa tìm kiếm" aria-label="Xóa tìm kiếm">✕</button>
     </div>
 
     <div id="tabs" class="item-list scroll-list"></div>
 
-    <div class="action-bar" style="border-top:1px solid var(--border-subtle); padding-top:8px;">
-      <button id="btn-quick-session" style="flex:1">
+    <div class="action-bar-footer">
+      <button id="btn-quick-session">
         <span id="save-session-icon"></span> Lưu Session
       </button>
-      <button id="btn-quick-workspace" style="flex:1">
+      <button id="btn-quick-workspace">
         <span id="save-workspace-icon"></span> Lưu Workspace
       </button>
     </div>
   </section>
 
   <!-- View 2: Workspaces -->
-  <section id="view-workspaces" class="tab-view">
+  <section id="view-workspaces" class="tab-view" role="tabpanel" aria-labelledby="tab-btn-workspaces">
     <div class="action-bar">
-      <input id="wname" placeholder="Tên workspace từ tab hiện tại…">
+      <input id="wname" placeholder="Tên workspace từ tab hiện tại…" aria-label="Tên workspace từ tab hiện tại">
       <button id="wsave" class="primary">Lưu</button>
     </div>
     <div id="workspaces" class="item-list scroll-list"></div>
   </section>
 
   <!-- View 3: Sessions -->
-  <section id="view-sessions" class="tab-view">
+  <section id="view-sessions" class="tab-view" role="tabpanel" aria-labelledby="tab-btn-sessions">
     <div class="action-bar">
-      <input id="name" placeholder="Tên session từ tab hiện tại…">
+      <input id="name" placeholder="Tên session từ tab hiện tại…" aria-label="Tên session từ tab hiện tại">
       <button id="save" class="primary">Lưu</button>
     </div>
     <div id="sessions" class="item-list scroll-list"></div>

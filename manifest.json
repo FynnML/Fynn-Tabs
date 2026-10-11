@@ -3,7 +3,8 @@
   "name": "Fynn Tabs",
   "version": "0.1.0",
   "description": "Quản lý tab, session và workspace — hoạt động độc lập.",
-  "permissions": ["tabs", "storage"],
+  "minimum_chrome_version": "104",
+  "permissions": ["tabs", "storage", "favicon"],
   "background": { "service_worker": "src/background/service-worker.js", "type": "module" },
   "action": { "default_popup": "src/popup/popup.html", "default_title": "Fynn Tabs" }
 }

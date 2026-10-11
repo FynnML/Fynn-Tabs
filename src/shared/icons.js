@@ -18,7 +18,7 @@ export const ICONS = {
   globe: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`,
   pin: `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z"></path></svg>`,
   check: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
-  logo: `<svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="url(#brand-grad)"/><path d="M8 11C8 9.89543 8.89543 9 10 9H22C23.1046 9 24 9.89543 24 11V21C24 22.1046 23.1046 23 22 23H10C8.89543 23 8 22.1046 8 21V11Z" stroke="white" stroke-width="2"/><path d="M8 14H24" stroke="white" stroke-width="2"/><circle cx="11.5" cy="11.5" r="1" fill="white"/><circle cx="15.5" cy="11.5" r="1" fill="white"/><circle cx="19.5" cy="11.5" r="1" fill="white"/><defs><linearGradient id="brand-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop stop-color="#6366F1"/><stop offset="1" stop-color="#8B5CF6"/></linearGradient></defs></svg>`
+  logo: `<svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#181818" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1"/><path d="M8 11C8 9.89543 8.89543 9 10 9H22C23.1046 9 24 9.89543 24 11V21C24 22.1046 23.1046 23 22 23H10C8.89543 23 8 22.1046 8 21V11Z" stroke="#F0F0F0" stroke-width="1.8"/><path d="M8 14H24" stroke="#F0F0F0" stroke-width="1.8"/><circle cx="11.5" cy="11.5" r="1" fill="#F0F0F0"/><circle cx="15.5" cy="11.5" r="1" fill="#F0F0F0"/><circle cx="19.5" cy="11.5" r="1" fill="#F0F0F0"/></svg>`
 };
 
 /**
@@ -37,7 +37,16 @@ export function createFaviconElement(url) {
   img.className = 'favicon-img';
   img.alt = '';
   img.loading = 'lazy';
-  img.src = `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(url)}&sz=32`;
+
+  try {
+    const faviconUrl = new URL(chrome.runtime.getURL('/_favicon/'));
+    faviconUrl.searchParams.set('pageUrl', url);
+    faviconUrl.searchParams.set('size', '32');
+    img.src = faviconUrl.toString();
+  } catch {
+    container.innerHTML = ICONS.globe;
+    return container;
+  }
 
   img.onerror = () => {
     container.innerHTML = ICONS.globe;

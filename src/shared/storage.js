@@ -7,8 +7,15 @@ const migrations = {
   // 1: (data) => ({ ...data, schemaVersion: 2, ... })  // ví dụ cho các phiên bản sau
 };
 
-export async function load() {
-  const data = await chrome.storage.local.get(null);
+// Hàng đợi tuần tự hóa các thao tác cập nhật (read-modify-write) để chống xung đột ghi đè
+let writeQueue = Promise.resolve();
+
+export async function load(keys = null) {
+  const query = keys
+    ? Array.from(new Set(['schemaVersion', ...(Array.isArray(keys) ? keys : [keys])]))
+    : null;
+
+  const data = await chrome.storage.local.get(query);
   if (!data.schemaVersion) {
     const fresh = DEFAULTS();
     await chrome.storage.local.set(fresh);
@@ -16,6 +23,9 @@ export async function load() {
   }
   let current = data;
   while (current.schemaVersion < SCHEMA_VERSION) {
+    if (query !== null) {
+      current = await chrome.storage.local.get(null);
+    }
     const migrate = migrations[current.schemaVersion];
     if (!migrate) throw new Error(`Thiếu migration từ v${current.schemaVersion}`);
     current = migrate(current);
@@ -24,9 +34,15 @@ export async function load() {
   return current;
 }
 
-export async function update(key, fn) {
-  const data = await load();
-  const next = fn(data[key] ?? []);
-  await chrome.storage.local.set({ [key]: next });
-  return next;
+export function update(key, fn) {
+  const run = async () => {
+    const data = await load(key);
+    const next = await fn(data[key] ?? []);
+    await chrome.storage.local.set({ [key]: next });
+    return next;
+  };
+
+  const opPromise = writeQueue.then(run);
+  writeQueue = opPromise.catch(() => {});
+  return opPromise;
 }

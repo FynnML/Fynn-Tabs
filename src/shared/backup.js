@@ -1,6 +1,8 @@
 // Xuất / nhập dữ liệu ra file JSON. Nhập = gộp (merge), không ghi đè dữ liệu hiện có.
 import { load, update, SCHEMA_VERSION } from './storage.js';
 
+export const MAX_IMPORT_SIZE = 5 * 1024 * 1024; // 5 MiB
+
 const isHttp = (u) => typeof u === 'string' && /^https?:\/\//i.test(u);
 const asName = (v, fallback) => (typeof v === 'string' && v.trim() ? v.trim() : fallback);
 const asTime = (v, fallback) => (Number.isFinite(v) ? v : fallback);
@@ -21,6 +23,10 @@ export async function exportData() {
 }
 
 export async function importData(text) {
+  if (typeof text === 'string' && new Blob([text]).size > MAX_IMPORT_SIZE) {
+    throw new Error('Tệp sao lưu vượt quá kích thước tối đa cho phép (5 MiB).');
+  }
+
   let data;
   try { data = JSON.parse(text); } catch { throw new Error('File không phải JSON hợp lệ.'); }
   if (!data || data.app !== 'fynn-tabs') throw new Error('Đây không phải file sao lưu của Fynn Tabs.');
@@ -31,8 +37,8 @@ export async function importData(text) {
 
   const current = await load();
   const have = {
-    sessions: new Set(current.sessions.map((s) => s.id)),
-    workspaces: new Set(current.workspaces.map((w) => w.id)),
+    sessions: new Set((current.sessions ?? []).map((s) => s.id)),
+    workspaces: new Set((current.workspaces ?? []).map((w) => w.id)),
   };
   const now = Date.now();
   const pick = (arr, kind, build) => (Array.isArray(arr) ? arr : [])
@@ -47,7 +53,7 @@ export async function importData(text) {
     createdAt: asTime(w.createdAt, now), updatedAt: asTime(w.updatedAt, now),
   }));
 
-  if (sessions.length) await update('sessions', (list) => [...list, ...sessions]);
-  if (workspaces.length) await update('workspaces', (list) => [...list, ...workspaces]);
+  if (sessions.length) await update('sessions', (list) => [...sessions, ...list]);
+  if (workspaces.length) await update('workspaces', (list) => [...workspaces, ...list]);
   return { sessions: sessions.length, workspaces: workspaces.length };
 }

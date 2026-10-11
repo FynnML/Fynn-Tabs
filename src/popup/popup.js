@@ -2,8 +2,8 @@ import { listSessions, saveCurrent, restoreSession, deleteSession } from '../sha
 import { listWorkspaces, createFromCurrent, openWorkspace, deleteWorkspace } from '../shared/workspaces.js';
 import { ICONS, createFaviconElement, getDomain } from '../shared/icons.js';
 import { showToast } from '../shared/toast.js';
+import { $, guard, createEmptyState, confirmTabOpen } from '../shared/ui.js';
 
-const $ = (id) => document.getElementById(id);
 let currentTabs = [];
 
 // Khởi tạo các biểu tượng tĩnh
@@ -18,24 +18,19 @@ function setupIcons() {
   $('save-workspace-icon').innerHTML = ICONS.plus;
 }
 
-// Bọc hàm bắt lỗi và thông báo Toast
-const guard = (fn) => async (...args) => {
-  try {
-    await fn(...args);
-  } catch (err) {
-    showToast(err.message, 'error');
-  }
-};
-
 // Quản lý chuyển tab giao diện
 function setupNavTabs() {
   const tabs = document.querySelectorAll('.nav-tab');
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => {
-      tabs.forEach((t) => t.classList.remove('active'));
+      tabs.forEach((t) => {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+      });
       document.querySelectorAll('.tab-view').forEach((v) => v.classList.remove('active'));
 
       tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
       const viewId = tab.dataset.view;
       const targetView = $(viewId);
       if (targetView) targetView.classList.add('active');
@@ -49,14 +44,6 @@ function setupNavTabs() {
 function switchTab(viewId) {
   const tabBtn = document.querySelector(`.nav-tab[data-view="${viewId}"]`);
   if (tabBtn) tabBtn.click();
-}
-
-// Tạo empty state trực quan
-function createEmptyState(message, iconSvg) {
-  const div = document.createElement('div');
-  div.className = 'empty-state';
-  div.innerHTML = `${iconSvg}<p>${message}</p>`;
-  return div;
 }
 
 // Render danh sách tab đang mở
@@ -80,6 +67,9 @@ function renderTabs() {
     const item = document.createElement('div');
     item.className = `item ${t.active ? 'active' : ''}`;
     item.title = `${t.title || ''}\n${t.url || ''}`;
+    item.setAttribute('role', 'button');
+    item.setAttribute('tabindex', '0');
+    item.setAttribute('aria-label', `${t.title || 'Tab'} - ${getDomain(t.url) || t.url}`);
 
     // Favicon
     const favicon = createFaviconElement(t.url);
@@ -94,6 +84,7 @@ function renderTabs() {
       const pinIcon = document.createElement('span');
       pinIcon.className = 'pinned-tag';
       pinIcon.innerHTML = ICONS.pin;
+      pinIcon.setAttribute('aria-label', 'Đã ghim');
       titleEl.appendChild(pinIcon);
     }
     titleEl.appendChild(document.createTextNode(t.title || t.url || 'Tab mới'));
@@ -111,21 +102,31 @@ function renderTabs() {
     const closeBtn = document.createElement('button');
     closeBtn.className = 'icon-btn danger';
     closeBtn.title = 'Đóng tab';
+    closeBtn.setAttribute('aria-label', `Đóng tab ${t.title || ''}`);
     closeBtn.innerHTML = ICONS.close;
-    closeBtn.onclick = async (e) => {
+    closeBtn.onclick = (e) => {
       e.stopPropagation();
-      await chrome.tabs.remove(t.id);
-      currentTabs = currentTabs.filter((x) => x.id !== t.id);
-      renderTabs();
+      guard(async () => {
+        await chrome.tabs.remove(t.id);
+        currentTabs = currentTabs.filter((x) => x.id !== t.id);
+        renderTabs();
+      })();
     };
 
     actions.appendChild(closeBtn);
     item.append(favicon, info, actions);
 
-    // Click vào item để chuyển tab
-    item.onclick = async () => {
+    // Click hoặc Enter để chuyển tab
+    const activateTab = async () => {
       await chrome.tabs.update(t.id, { active: true });
       window.close();
+    };
+    item.onclick = activateTab;
+    item.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        activateTab();
+      }
     };
 
     return item;
@@ -147,6 +148,9 @@ async function renderWorkspaces() {
   const elements = list.map((w) => {
     const item = document.createElement('div');
     item.className = 'item';
+    item.setAttribute('role', 'button');
+    item.setAttribute('tabindex', '0');
+    item.setAttribute('aria-label', `Workspace ${w.name}, ${w.urls.length} URL`);
 
     const icon = document.createElement('span');
     icon.className = 'favicon-box';
@@ -171,16 +175,18 @@ async function renderWorkspaces() {
     const openBtn = document.createElement('button');
     openBtn.className = 'icon-btn';
     openBtn.title = 'Mở workspace trong cửa sổ mới';
+    openBtn.setAttribute('aria-label', `Mở workspace ${w.name}`);
     openBtn.innerHTML = ICONS.externalLink;
     openBtn.onclick = guard(async (e) => {
       e.stopPropagation();
-      await openWorkspace(w.id);
-      showToast(`Đã mở "${w.name}"`, 'success');
+      const opened = await openWorkspace(w.id, { confirm: confirmTabOpen });
+      if (opened) showToast(`Đã mở "${w.name}"`, 'success');
     });
 
     const delBtn = document.createElement('button');
     delBtn.className = 'icon-btn danger';
     delBtn.title = 'Xoá workspace';
+    delBtn.setAttribute('aria-label', `Xóa workspace ${w.name}`);
     delBtn.innerHTML = ICONS.trash;
     delBtn.onclick = guard(async (e) => {
       e.stopPropagation();
@@ -192,9 +198,16 @@ async function renderWorkspaces() {
     actions.append(openBtn, delBtn);
     item.append(icon, info, actions);
 
-    item.onclick = guard(async () => {
-      await openWorkspace(w.id);
+    const handleOpen = guard(async () => {
+      await openWorkspace(w.id, { confirm: confirmTabOpen });
     });
+    item.onclick = handleOpen;
+    item.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleOpen();
+      }
+    };
 
     return item;
   });
@@ -215,6 +228,8 @@ async function renderSessions() {
   const elements = list.map((s) => {
     const item = document.createElement('div');
     item.className = 'item';
+    item.setAttribute('role', 'button');
+    item.setAttribute('tabindex', '0');
 
     const icon = document.createElement('span');
     icon.className = 'favicon-box';
@@ -236,6 +251,7 @@ async function renderSessions() {
       minute: '2-digit'
     });
     subtitle.textContent = `${s.tabs.length} tab · ${dateStr}`;
+    item.setAttribute('aria-label', `Session ${s.name}, ${s.tabs.length} tab, ${dateStr}`);
 
     info.append(title, subtitle);
 
@@ -245,16 +261,18 @@ async function renderSessions() {
     const openBtn = document.createElement('button');
     openBtn.className = 'icon-btn';
     openBtn.title = 'Khôi phục session trong cửa sổ mới';
+    openBtn.setAttribute('aria-label', `Khôi phục session ${s.name}`);
     openBtn.innerHTML = ICONS.externalLink;
     openBtn.onclick = guard(async (e) => {
       e.stopPropagation();
-      await restoreSession(s.id);
-      showToast(`Đã khôi phục "${s.name}"`, 'success');
+      const restored = await restoreSession(s.id, { confirm: confirmTabOpen });
+      if (restored) showToast(`Đã khôi phục "${s.name}"`, 'success');
     });
 
     const delBtn = document.createElement('button');
     delBtn.className = 'icon-btn danger';
     delBtn.title = 'Xoá session';
+    delBtn.setAttribute('aria-label', `Xóa session ${s.name}`);
     delBtn.innerHTML = ICONS.trash;
     delBtn.onclick = guard(async (e) => {
       e.stopPropagation();
@@ -266,9 +284,16 @@ async function renderSessions() {
     actions.append(openBtn, delBtn);
     item.append(icon, info, actions);
 
-    item.onclick = guard(async () => {
-      await restoreSession(s.id);
+    const handleRestore = guard(async () => {
+      await restoreSession(s.id, { confirm: confirmTabOpen });
     });
+    item.onclick = handleRestore;
+    item.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleRestore();
+      }
+    };
 
     return item;
   });
